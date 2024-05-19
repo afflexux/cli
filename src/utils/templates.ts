@@ -51,7 +51,7 @@ const component: Template = ({ name, args }) => ({
 
 <script setup></script>
 
-<style scoped></style>
+<style lang="postcss" scoped></style>
 `,
 })
 
@@ -88,7 +88,7 @@ const layout: Template = ({ name }) => ({
 
 <script setup></script>
 
-<style scoped></style>
+<style lang="postcss" scoped></style>
 `,
 })
 
@@ -103,7 +103,7 @@ const page: Template = ({ name }) => ({
 
 <script setup></script>
 
-<style scoped></style>
+<style lang="postcss" scoped></style>
 `,
 })
 

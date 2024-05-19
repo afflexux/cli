@@ -43,13 +43,13 @@ const component: Template = ({ name, args }) => ({
     'mode',
   )}.vue`,
   contents: `
-<script lang="ts" setup></script>
-
 <template>
   <div>
     Component: ${name}
   </div>
 </template>
+
+<script setup></script>
 
 <style scoped></style>
 `,
@@ -79,14 +79,14 @@ export default defineNuxtRouteMiddleware((to, from) => {})
 const layout: Template = ({ name }) => ({
   path: `layouts/${name}.vue`,
   contents: `
-<script lang="ts" setup></script>
-
 <template>
   <div>
     Layout: ${name}
     <slot />
   </div>
 </template>
+
+<script setup></script>
 
 <style scoped></style>
 `,
@@ -95,13 +95,13 @@ const layout: Template = ({ name }) => ({
 const page: Template = ({ name }) => ({
   path: `pages/${name}.vue`,
   contents: `
-<script lang="ts" setup></script>
-
 <template>
   <div>
     Page: ${name}
   </div>
 </template>
+
+<script setup></script>
 
 <style scoped></style>
 `,

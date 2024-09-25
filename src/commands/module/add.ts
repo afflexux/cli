@@ -1,12 +1,14 @@
-import { existsSync } from 'node:fs'
+import * as fs from 'node:fs'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
+import type { FileHandle } from 'node:fs/promises'
 import { defineCommand } from 'citty'
 import { resolve } from 'pathe'
-import type { ProxifiedModule } from 'magicast'
-import { loadFile, writeFile, parseModule } from 'magicast'
 import consola from 'consola'
 import { addDependency } from 'nypm'
 import { $fetch } from 'ofetch'
 import { satisfies } from 'semver'
+import { updateConfig } from 'c12/update'
 import { colors } from 'consola/utils'
 import { sharedArgs } from '../_shared'
 import {
@@ -66,7 +68,7 @@ export default defineCommand({
       consola.info(
         `Installing \`${r.pkg}\`${isDev ? ' development' : ''} dependency`,
       )
-      const res = await addDependency(r.pkg, { cwd, dev: isDev }).catch(
+      const res = await addDependency(r.pkg, { cwd, dev: isDev, installPeerDependencies: true }).catch(
         (error) => {
           consola.error(error)
           return consola.prompt(
@@ -89,57 +91,34 @@ export default defineCommand({
 
     // Update nuxt.config.ts
     if (!ctx.args.skipConfig) {
-      await updateNuxtConfig(cwd, (config) => {
-        if (!config.modules) {
-          config.modules = []
-        }
-
-        if (config.modules.includes(r.pkgName)) {
-          consola.info(`\`${r.pkgName}\` is already in the \`modules\``)
-          return
-        }
-        consola.info(`Adding \`${r.pkgName}\` to the \`modules\``)
-        config.modules.push(r.pkgName)
-      }).catch((err) => {
-        consola.error(err)
-        consola.error(
-          `Please manually add \`${r.pkgName}\` to the \`modules\` in \`nuxt.config.ts\``,
-        )
+      await updateConfig({
+        cwd,
+        configFile: 'nuxt.config',
+        async onCreate() {
+          consola.info(`Creating \`nuxt.config.ts\``)
+          return getDefaultNuxtConfig()
+        },
+        async onUpdate(config) {
+          if (!config.modules) {
+            config.modules = []
+          }
+          if (config.modules.includes(r.pkgName)) {
+            consola.info(`\`${r.pkgName}\` is already in the \`modules\``)
+            return
+          }
+          consola.info(`Adding \`${r.pkgName}\` to the \`modules\``)
+          config.modules.push(r.pkgName)
+        },
+      }).catch((error) => {
+        consola.error(`Failed to update \`nuxt.config\`: ${error.message}`)
+        consola.error(`Please manually add \`${r.pkgName}\` to the \`modules\` in \`nuxt.config.ts\``)
+        return null
       })
     }
   },
 })
 
 // -- Internal Utils --
-
-async function updateNuxtConfig(
-  rootDir: string,
-  update: (config: any) => void,
-) {
-  let _module: ProxifiedModule
-  const nuxtConfigFile = resolve(rootDir, 'nuxt.config.ts')
-  if (existsSync(nuxtConfigFile)) {
-    consola.info('Updating `nuxt.config.ts`')
-    _module = await loadFile(nuxtConfigFile)
-  }
-  else {
-    consola.info('Creating `nuxt.config.ts`')
-    _module = parseModule(getDefaultNuxtConfig())
-  }
-  const defaultExport = _module.exports.default
-  if (!defaultExport) {
-    throw new Error('`nuxt.config.ts` does not have a default export!')
-  }
-  if (defaultExport.$type === 'function-call') {
-    update(defaultExport.$args[0])
-  }
-  else {
-    update(defaultExport)
-  }
-  await writeFile(_module as any, nuxtConfigFile)
-  consola.success('`nuxt.config.ts` updated')
-}
-
 function getDefaultNuxtConfig() {
   return `
 // https://nuxt.com/docs/api/configuration/nuxt-config
@@ -163,7 +142,7 @@ async function resolveModule(
     pkgName: string
     pkgVersion: string
   }
-> {
+  > {
   let pkgName = moduleName
   let pkgVersion: string | undefined
 
@@ -241,9 +220,8 @@ async function resolveModule(
 
   // Fetch package on npm
   pkgVersion = pkgVersion || 'latest'
-  const pkg = await $fetch(
-    `https://registry.npmjs.org/${pkgName}/${pkgVersion}`,
-  )
+  const registry = await detectNpmRegistry()
+  const pkg = await $fetch(`${registry}/${pkgName}/${pkgVersion}`)
   const pkgDependencies = Object.assign(
     pkg.dependencies || {},
     pkg.devDependencies || {},
@@ -272,4 +250,40 @@ async function resolveModule(
     pkgName,
     pkgVersion,
   }
+}
+
+async function detectNpmRegistry() {
+  if (process.env.COREPACK_NPM_REGISTRY) {
+    return process.env.COREPACK_NPM_REGISTRY
+  }
+  const userNpmrcPath = join(homedir(), '.npmrc')
+  const cwdNpmrcPath = join(process.cwd(), '.npmrc')
+  const registry = await getRegistryFromFile([cwdNpmrcPath, userNpmrcPath])
+  if (registry) {
+    process.env.COREPACK_NPM_REGISTRY = registry
+  }
+  return registry || 'https://registry.npmjs.org'
+}
+
+async function getRegistryFromFile(paths: string[]) {
+  for (const npmrcPath of paths) {
+    let fd: FileHandle | undefined
+    try {
+      fd = await fs.promises.open(npmrcPath, 'r')
+      if (await fd.stat().then(r => r.isFile())) {
+        const npmrcContent = await fd.readFile('utf-8')
+        const registryMatch = npmrcContent.match(/registry=(.*)/)
+        if (registryMatch) {
+          return registryMatch[1].trim()
+        }
+      }
+    }
+    catch {
+    // swallow errors as file does not exist
+    }
+    finally {
+      await fd?.close()
+    }
+  }
+  return null
 }

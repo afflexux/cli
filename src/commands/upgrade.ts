@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { consola } from 'consola'
 import { colors } from 'consola/utils'
 import { relative, resolve } from 'pathe'
@@ -25,6 +26,27 @@ async function getNuxtVersion(path: string): Promise<string | null> {
   catch {
     return null
   }
+}
+
+async function checkNuxtDependencyType(path: string): Promise<'dependencies' | 'devDependencies' | null> {
+  try {
+    const pkg = await readPackageJSON(path)
+    if (pkg.dependencies && pkg.dependencies['nuxt']) {
+      return 'dependencies'
+    }
+    if (pkg.devDependencies && pkg.devDependencies['nuxt']) {
+      return 'devDependencies'
+    }
+    return null
+  }
+  catch {
+    return null
+  }
+}
+
+function hasPnpmWorkspaceFile(cwd: string): boolean {
+  const pnpmWorkspaceFilePath = resolve(cwd, 'pnpm-workspace.yaml')
+  return existsSync(pnpmWorkspaceFilePath)
 }
 
 export default defineCommand({
@@ -61,6 +83,9 @@ export default defineCommand({
     const currentVersion = (await getNuxtVersion(cwd)) || '[unknown]'
     consola.info('Current Nuxt version:', currentVersion)
 
+    // Check if Nuxt is a dependency or devDependency
+    const nuxtDependencyType = await checkNuxtDependencyType(cwd)
+
     // Force install
     const pmLockFile = resolve(cwd, packageManagerLocks[packageManager])
     const forceRemovals = ['node_modules', relative(process.cwd(), pmLockFile)]
@@ -85,12 +110,16 @@ export default defineCommand({
 
     // Install latest version
     consola.info('Installing latest Nuxt 3 release...')
-    execSync(
-      `${packageManager} ${
-        packageManager === 'yarn' ? 'add' : 'install'
-      } -D nuxt`,
-      { stdio: 'inherit', cwd },
-    )
+
+    const command = [
+      packageManager,
+      packageManager === 'yarn' ? 'add' : 'install',
+      nuxtDependencyType === 'devDependencies' ? '-D' : '',
+      packageManager === 'pnpm' && hasPnpmWorkspaceFile(cwd) ? '-w' : '',
+      'nuxt',
+    ].filter(Boolean).join(' ')
+
+    execSync(command, { stdio: 'inherit', cwd })
 
     // Clean up after upgrade
     let buildDir: string = '.nuxt'

@@ -3,6 +3,7 @@ import EventEmitter from 'node:events'
 import type { AddressInfo } from 'node:net'
 import { relative, resolve, join } from 'pathe'
 import chokidar from 'chokidar'
+import type { FSWatcher } from 'chokidar'
 import { consola } from 'consola'
 import { debounce } from 'perfect-debounce'
 import { toNodeListener } from 'h3'
@@ -75,11 +76,11 @@ export async function createNuxtDevServer(
 
 // https://regex101.com/r/7HkR5c/1
 const RESTART_RE
-  = /^(nuxt\.config\.[a-z0-9]+|\.nuxtignore|\.nuxtrc|\.config\/nuxt(\.config)?\.[a-z0-9]+)$/
+  = /^(?:nuxt\.config\.[a-z0-9]+|\.nuxtignore|\.nuxtrc|\.config\/nuxt(?:\.config)?\.[a-z0-9]+)$/
 
 class NuxtDevServer extends EventEmitter {
   private _handler?: RequestListener
-  private _distWatcher?: chokidar.FSWatcher
+  private _distWatcher?: FSWatcher
   private _currentNuxt?: Nuxt
   private _loadingMessage?: string
 
@@ -188,23 +189,17 @@ class NuxtDevServer extends EventEmitter {
 
     // Connect Vite HMR
     if (!process.env.NUXI_DISABLE_VITE_HMR) {
-      this._currentNuxt.hooks.hook(
-        'vite:extendConfig',
-        (config, { isClient }) => {
-          if (isClient && config.server) {
-            config.server.hmr = {
-              ...(config.server.hmr as Exclude<
-                typeof config.server.hmr,
-                boolean
-              >),
-              protocol: undefined,
-              port: undefined,
-              host: undefined,
-              server: this.listener.server,
-            }
+      this._currentNuxt.hooks.hook('vite:extend', ({ config }) => {
+        if (config.server) {
+          config.server.hmr = {
+            protocol: undefined,
+            ...(config.server.hmr as Exclude<typeof config.server.hmr, boolean>),
+            port: undefined,
+            host: undefined,
+            server: this.listener.server,
           }
-        },
-      )
+        }
+      })
     }
 
     // Remove websocket handlers on close
@@ -245,7 +240,7 @@ class NuxtDevServer extends EventEmitter {
           const nuxt = this._currentNuxt
           if (!nuxt) return
           const viteHmrPath = joinURL(
-            nuxt.options.app.baseURL,
+            nuxt.options.app.baseURL.startsWith('./') ? nuxt.options.app.baseURL.slice(1) : nuxt.options.app.baseURL,
             nuxt.options.app.buildAssetsDir,
           )
           if (req.url.startsWith(viteHmrPath)) {
@@ -276,7 +271,7 @@ class NuxtDevServer extends EventEmitter {
 
     if (this.listener.https && !process.env.NODE_TLS_REJECT_UNAUTHORIZED) {
       consola.warn(
-        'You might need `NODE_TLS_REJECT_UNAUTHORIZED=0` environment vairable to make https work.',
+        'You might need `NODE_TLS_REJECT_UNAUTHORIZED=0` environment variable to make https work.',
       )
     }
 

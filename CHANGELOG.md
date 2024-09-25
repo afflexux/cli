@@ -1,6 +1,90 @@
 # Changelog
 
 
+## v3.13.2
+
+[compare changes](https://github.com/nuxt/cli/compare/v3.13.1...v3.13.2)
+
+### 🩹 Fixes
+
+- **dev:** Handle relative baseURL ([#468](https://github.com/nuxt/cli/pull/468))
+
+### 🏡 Chore
+
+- **release:** V3.13.1 ([34bdbbc](https://github.com/nuxt/cli/commit/34bdbbc))
+- Add `compatibilityDate` ([dd0bf06](https://github.com/nuxt/cli/commit/dd0bf06))
+
+### ❤️ Contributors
+
+- Daniel Roe ([@danielroe](http://github.com/danielroe))
+
+## v3.13.1
+
+[compare changes](https://github.com/nuxt/cli/compare/v3.13.0...v3.13.1)
+
+## v3.13.0
+
+[compare changes](https://github.com/nuxt/cli/compare/v3.12.0...v3.13.0)
+
+### 🚀 Enhancements
+
+- **build:** Warn if `--prerender` overrides `--preset` ([#392](https://github.com/nuxt/cli/pull/392))
+- **module:** Support other nuxt config extensions when adding ([#401](https://github.com/nuxt/cli/pull/401))
+- **module:** Install module peer dependencies ([#442](https://github.com/nuxt/cli/pull/442))
+- **info:** Link to issue templates ([#406](https://github.com/nuxt/cli/pull/406))
+
+### 🩹 Fixes
+
+- Allow configuring vite hmr protocol ([#436](https://github.com/nuxt/cli/pull/436))
+- Add `-w` arg when updating pnpm root workspace ([#449](https://github.com/nuxt/cli/pull/449))
+- Keep nuxt current dependency type ([#430](https://github.com/nuxt/cli/pull/430))
+
+### 💅 Refactors
+
+- **module:** Use `c12` util to update config ([#441](https://github.com/nuxt/cli/pull/441))
+
+### 🏡 Chore
+
+- Remove `is-number` from bundled cli ([#439](https://github.com/nuxt/cli/pull/439))
+- Remove unnecessary spread operator and fix typos ([#459](https://github.com/nuxt/cli/pull/459))
+
+### ❤️ Contributors
+
+- OrbisK ([@OrbisK](http://github.com/OrbisK))
+- Deth <gabriel@rosa.dev.br>
+- Julien Huang ([@huang-julien](http://github.com/huang-julien))
+- Xjccc ([@xjccc](http://github.com/xjccc))
+- Daniel Roe ([@danielroe](http://github.com/danielroe))
+- Meir Roth ([@meirroth](http://github.com/meirroth))
+- Cmd430 <cmd430@gmail.com>
+
+## v3.12.0
+
+[compare changes](https://github.com/nuxt/cli/compare/v3.11.1...v3.12.0)
+
+### 🩹 Fixes
+
+- **prepare:** Respect `--dotenv` ([#377](https://github.com/nuxt/cli/pull/377))
+- Add '@nuxt/kit' to nuxt module verification ([#386](https://github.com/nuxt/cli/pull/386), [#387](https://github.com/nuxt/cli/pull/387))
+- Check`nitropack-nightly` when resolving nitro version ([bfaf128](https://github.com/nuxt/cli/commit/bfaf128))
+- **dev:** Set `hmr.server` earlier in lifecycle ([#420](https://github.com/nuxt/cli/pull/420))
+- **preview:** Correct path with custom `nitro.output.dir` ([#376](https://github.com/nuxt/cli/pull/376))
+
+### 🏡 Chore
+
+- **release:** V3.11.1 ([8e1bd03](https://github.com/nuxt/cli/commit/8e1bd03))
+- Migrate to eslint v9 ([#412](https://github.com/nuxt/cli/pull/412))
+- **add:** Change order of `setup` attr in templates ([#378](https://github.com/nuxt/cli/pull/378))
+
+### ❤️ Contributors
+
+- Xjccc ([@xjccc](http://github.com/xjccc))
+- Daniel Roe ([@danielroe](http://github.com/danielroe))
+- Dale Weaver ([@daleweaver777](http://github.com/daleweaver777))
+- 你好怪凡 <zousitanghulu@foxmail.com>
+- Damian Głowala ([@DamianGlowala](http://github.com/DamianGlowala))
+- Pooya Parsa ([@pi0](http://github.com/pi0))
+
 ## v3.11.1
 
 [compare changes](https://github.com/nuxt/cli/compare/v3.11.0...v3.11.1)
